@@ -1,0 +1,22 @@
+{
+  "name": "fv_tmw_checkboxes_process",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon main.js",
+    "start": "node main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "mongodb": "^6.3.0",
+    "ssh2-sftp-client": "^10.0.3",
+    "tedious": "^16.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}
