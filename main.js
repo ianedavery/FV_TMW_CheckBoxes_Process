@@ -11,7 +11,7 @@ const {
 	NAME: indexName, 
 } = process.env;
 
-const { sql } = require('./utils');
+const { logger, sql } = require('./utils');
 
 const sftp = new Client();
 const dbClient = new MongoClient(`${dbURL}?appName=${indexName}`);
@@ -60,6 +60,7 @@ const main = async () => {
 						{ param: 'lastupdateby', type: 'VarChar', value: 'transflo', outParameter: false },
 						{ param: 'legheader', type: 'VarChar', value: rowArray[1], outParameter: false },
 					];
+					console.log({ paperworkParams });
 					try {
 						await sql('FV2_image_SetPWReceivedY001_sp', paperworkParams);
 						// need to check SQL repsonse and use that to toggle settlementSubmitted boolean
@@ -78,7 +79,7 @@ const main = async () => {
 						{ param: 'carinvno', type: 'VarChar', value: rowArray[3], outParameter: false },
 						{ param: 'carinvdate', type: 'DateTime', value: rowArray[5], outParameter: false },
 					];
-					console.log(settlementParams);
+					console.log({ settlementParams });
 					try {
 						await sql('DevOps_Settlment_invno_date', settlementParams);
 						// need to check SQL repsonse and use that to toggle settlementSubmitted boolean
@@ -102,54 +103,45 @@ const main = async () => {
 				} catch (error) {
 					// need to add logger
 					console.error(error);
+					logger.error(error);
 				}
 
-				await dbClient.db('Transflo').collection('processed_paperwork').updateOne(
-					{
-						orderNumber: rowArray[0],
-						legNumber: rowArray[1],
-						docType: rowArray[2],
-						carrierInvoiceNumber: rowArray[3],
-					},
-					{
-						$set:
-							{	
-								level: customError ? 'error' : 'info',
-								orderNumber: rowArray[0],
-								legNumber: rowArray[1],
-								docType: rowArray[2],
-								carrierInvoiceNumber: rowArray[3],
-								carrierAmount: rowArray[4],
-								carrierInvoiceDate: rowArray[5],
-								approvedDate: rowArray[6],
-								updatedAt: new Date(),
-								boxChecked,
-								paperworkParams: boxChecked
-								? 	[
-										{ param: 'ordnum', type: 'VarChar', value: rowArray[0], outParameter: false },
-										{ param: 'doctype', type: 'VarChar', value: rowArray[2], outParameter: false },
-										{ param: 'lastupdateby', type: 'VarChar', value: 'transflo', outParameter: false },
-										{ param: 'legheader', type: 'VarChar', value: rowArray[1], outParameter: false },
-									]
-								: [],
-								settlementSubmitted,
-								settlementParams: settlementSubmitted
-								?	[
-										{ param: 'ordernumber', type: 'Int', value: parseInt(rowArray[0], 10), outParameter: false },
-										{ param: 'user', type: 'VarChar', value: 'transflo', outParameter: false },
-										{ param: 'carinvno', type: 'VarChar', value: rowArray[3], outParameter: false },
-										{ param: 'carinvdate', type: 'DateTime', value: rowArray[5], outParameter: false },
-									]
-								: [],
-								file: directoryList[i],
-								error: customError || null,
-							},
-						$setOnInsert: { createdAt: new Date() },
-					},
-					{ upsert: true },
-				);
+				const logObj = {
+					orderNumber: rowArray[0],
+					legNumber: rowArray[1],
+					docType: rowArray[2],
+					carrierInvoiceNumber: rowArray[3],
+					carrierAmount: rowArray[4],
+					carrierInvoiceDate: rowArray[5],
+					approvedDate: rowArray[6],
+					updatedAt: new Date(),
+					boxChecked,
+					paperworkParams: boxChecked
+					? 	[
+							{ param: 'ordnum', type: 'VarChar', value: rowArray[0], outParameter: false },
+							{ param: 'doctype', type: 'VarChar', value: rowArray[2], outParameter: false },
+							{ param: 'lastupdateby', type: 'VarChar', value: 'transflo', outParameter: false },
+							{ param: 'legheader', type: 'VarChar', value: rowArray[1], outParameter: false },
+						]
+					: [],
+					settlementSubmitted,
+					settlementParams: settlementSubmitted
+					?	[
+							{ param: 'ordernumber', type: 'Int', value: parseInt(rowArray[0], 10), outParameter: false },
+							{ param: 'user', type: 'VarChar', value: 'transflo', outParameter: false },
+							{ param: 'carinvno', type: 'VarChar', value: rowArray[3], outParameter: false },
+							{ param: 'carinvdate', type: 'DateTime', value: rowArray[5], outParameter: false },
+						]
+					: [],
+					file: directoryList[i],
+					error: customError || null,
+				};
+
+				if (customError) logger.error(logObj);
+				else logger.info(logObj);
 			} catch (error) {
 				console.error(error);
+				logger.error(error);
 			}
 		};
 
