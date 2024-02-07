@@ -72,7 +72,7 @@ const main = async () => {
 						customError.config = paperworkParams;
 					}
 				}
-				if (isCI && !error) {
+				if (isCI && !customError) {
 					const settlementParams = [
 						{ param: 'ordernumber', type: 'Int', value: parseInt(rowArray[0], 10), outParameter: false },
 						{ param: 'user', type: 'VarChar', value: 'transflo', outParameter: false },
